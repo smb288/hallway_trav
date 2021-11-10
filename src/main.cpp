@@ -15,8 +15,8 @@
 
 long duration; // variable for the duration of sound wave travel
 int distanceM, distanceL, distanceR; // variable for the distance measurement
-int m1Speed = 220;
-int m2Speed = 220;
+int m1Speed = 250;
+int m2Speed = 255;
 
 void setup() {
   pinMode(trigPin1, OUTPUT); // Sets the trigPin as an OUTPUT
@@ -48,7 +48,6 @@ int pulseUltra(int echo, int trig) {
   return distance;
 }
 void loop() {
-  // Clears the trigPin condition
   int motor1Speed = map(m1Speed, 0, 1023, 0, 255);
   int motor2Speed = map(m2Speed, 0, 1023, 0, 255);
   distanceM = pulseUltra(echoPin1, trigPin1);
@@ -64,17 +63,25 @@ void loop() {
   Serial.print("\tDistanceR: ");
   Serial.print(distanceR);
   Serial.println(" cm");*/
-  if(distanceM > 20) {
+  if(distanceM > 30) {
     analogWrite(Motor1, motor1Speed);
     analogWrite(Motor2, 0);
     analogWrite(Motor3, 0);
     analogWrite(Motor4, motor2Speed);
   }
-  else {
+  else if(distanceL > distanceR) {
     analogWrite(Motor1, 0);
     analogWrite(Motor2, 0);
     analogWrite(Motor3, 0);
-    analogWrite(Motor4, 0);
+    analogWrite(Motor4, motor1Speed);
+    delay(100);
   }
-  delay(100);
+  else if(distanceL < distanceR) {
+    analogWrite(Motor1, motor1Speed);
+    analogWrite(Motor2, 0);
+    analogWrite(Motor3, 0);
+    analogWrite(Motor4, 0);
+    delay(100);
+  }
+  delay(1);
 }
