@@ -14,7 +14,7 @@
 
 
 long duration; // variable for the duration of sound wave travel
-int distance1, distance2, distance3; // variable for the distance measurement
+int distanceM, distanceL, distanceR; // variable for the distance measurement
 int m1Speed = 100;
 int m2Speed = 100;
 
@@ -51,20 +51,20 @@ void loop() {
   // Clears the trigPin condition
   int motor1Speed = map(m1Speed, 0, 1023, 0, 255);
   int motor2Speed = map(m2Speed, 0, 1023, 0, 255);
-  distance1 = pulseUltra(echoPin1, trigPin1);
-  distance2 = pulseUltra(echoPin2, trigPin2);
-  distance3 = pulseUltra(echoPin3, trigPin3);
+  distanceM = pulseUltra(echoPin1, trigPin1);
+  distanceL = pulseUltra(echoPin2, trigPin2);
+  distanceR = pulseUltra(echoPin3, trigPin3);
   // Displays the distance on the Serial Monitor
-  /*Serial.print("Distance1: ");
-  Serial.print(distance1);
+  /*Serial.print("DistanceL: ");
+  Serial.print(distanceL);
   Serial.print(" cm");
-  Serial.print("Distance2: ");
-  Serial.print(distance2);
+  Serial.print("\tDistanceM: ");
+  Serial.print(distanceM);
   Serial.print(" cm");
-  Serial.print(" Distance3: ");
-  Serial.print(distance3);
+  Serial.print("\tDistanceR: ");
+  Serial.print(distanceR);
   Serial.println(" cm");*/
-  if(distance1 > 30) {
+  if(distanceM > 30) {
     analogWrite(Motor1, motor1Speed);
     analogWrite(Motor2, 0);
     analogWrite(Motor3, 0);
@@ -76,5 +76,5 @@ void loop() {
     digitalWrite(Motor3, 0);
     digitalWrite(Motor4, 0);
   }
-  delay(1);
+  delay(100);
 }
