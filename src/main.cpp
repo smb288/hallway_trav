@@ -15,8 +15,8 @@
 
 long duration; // variable for the duration of sound wave travel
 int distanceM, distanceL, distanceR; // variable for the distance measurement
-int m1Speed = 100;
-int m2Speed = 100;
+int m1Speed = 220;
+int m2Speed = 220;
 
 void setup() {
   pinMode(trigPin1, OUTPUT); // Sets the trigPin as an OUTPUT
@@ -64,17 +64,17 @@ void loop() {
   Serial.print("\tDistanceR: ");
   Serial.print(distanceR);
   Serial.println(" cm");*/
-  if(distanceM > 30) {
+  if(distanceM > 20) {
     analogWrite(Motor1, motor1Speed);
     analogWrite(Motor2, 0);
     analogWrite(Motor3, 0);
     analogWrite(Motor4, motor2Speed);
   }
   else {
-    digitalWrite(Motor1, 0);
-    digitalWrite(Motor2, 0);
-    digitalWrite(Motor3, 0);
-    digitalWrite(Motor4, 0);
+    analogWrite(Motor1, 0);
+    analogWrite(Motor2, 0);
+    analogWrite(Motor3, 0);
+    analogWrite(Motor4, 0);
   }
   delay(100);
 }
