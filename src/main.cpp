@@ -11,9 +11,12 @@
 #define Motor3 18
 #define Motor4 19
 #define LED 25
-// defines variables
+
+
 long duration; // variable for the duration of sound wave travel
 int distance1, distance2, distance3; // variable for the distance measurement
+int m1Speed = 100;
+int m2Speed = 100;
 
 void setup() {
   pinMode(trigPin1, OUTPUT); // Sets the trigPin as an OUTPUT
@@ -27,9 +30,8 @@ void setup() {
   pinMode(Motor3, OUTPUT);
   pinMode(Motor4, OUTPUT);
   pinMode(LED, OUTPUT);
-  Serial.begin(115200); // // Serial Communication is starting with 9600 of baudrate speed
-  Serial.println("Ultrasonic Sensor HC-SR04 Test"); // print some text in Serial Monitor
-  Serial.println("with Arduino UNO R3");
+  Serial.begin(115200);
+  
 }
 int pulseUltra(int echo, int trig) {
   digitalWrite(trig, LOW);
@@ -47,6 +49,8 @@ int pulseUltra(int echo, int trig) {
 }
 void loop() {
   // Clears the trigPin condition
+  int motor1Speed = map(m1Speed, 0, 1023, 0, 255);
+  int motor2Speed = map(m2Speed, 0, 1023, 0, 255);
   distance1 = pulseUltra(echoPin1, trigPin1);
   distance2 = pulseUltra(echoPin2, trigPin2);
   distance3 = pulseUltra(echoPin3, trigPin3);
@@ -61,10 +65,10 @@ void loop() {
   Serial.print(distance3);
   Serial.println(" cm");*/
   if(distance1 > 30) {
-    digitalWrite(Motor1, 1);
-    digitalWrite(Motor2, 0);
-    digitalWrite(Motor3, 0);
-    digitalWrite(Motor4, 1);
+    analogWrite(Motor1, motor1Speed);
+    analogWrite(Motor2, 0);
+    analogWrite(Motor3, 0);
+    analogWrite(Motor4, motor2Speed);
   }
   else {
     digitalWrite(Motor1, 0);
