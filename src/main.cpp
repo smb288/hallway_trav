@@ -6,8 +6,10 @@
 #define trigPin2 3
 #define echoPin3 4
 #define trigPin3 5
-#define IR1 6
-#define IR2 7
+#define IRFrontCenter 6
+#define IRBackCenter 7
+#define IRFrontLeft 8
+#define IRFrontRight 9
 #define Motor1 16
 #define Motor2 17
 #define Motor3 18
@@ -30,9 +32,11 @@ void setup() {
   pinMode(trigPin2, OUTPUT); // Sets the trigPin as an OUTPUT
   pinMode(echoPin2, INPUT);
   pinMode(trigPin3, OUTPUT); // Sets the trigPin as an OUTPUT
-  pinMode(IR1, INPUT);
-  pinMode(IR2, INPUT);
   pinMode(echoPin3, INPUT);
+  pinMode(IRFrontCenter, INPUT);
+  pinMode(IRBackCenter, INPUT);
+  pinMode(IRFrontLeft, INPUT);
+  pinMode(IRFrontRight, INPUT);
   pinMode(Motor1, OUTPUT);
   pinMode(Motor2, OUTPUT);
   pinMode(Motor3, OUTPUT);
@@ -50,7 +54,7 @@ int pulseUltra(int echo, int trig) {
   digitalWrite(trig, LOW);
   // Reads the echoPin, returns the sound wave travel time in microseconds
   duration = pulseIn(echo, HIGH);
-  // Calculating the distance
+  // Calculating the distance in cm
   int distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
   
   return distance;
@@ -126,7 +130,10 @@ void loop() {
   Serial.print(distanceR);
   Serial.println(" cm");*/
 
-  if(digitalRead(IR1) && digitalRead(IR2)) {
+  if(digitalRead(IRFrontCenter) && digitalRead(IRBackCenter)
+    && digitalRead(IRFrontLeft) && digitalRead(IRFrontRight)) {
+    //The ring is 122cm so we should be detecting that far from the sensors to check for any object in the ring
+    //modified the distance to 122 to check for that.
     if(distanceM < 45){
       forward();
       delay(100);
@@ -144,17 +151,34 @@ void loop() {
       delay(100);
     }
   }
-  else if (!digitalRead(IR1)){
+  else if (!digitalRead(IRFrontCenter)){
+    //write code to interrupt this code if another border is detected in the process of going through this piece of code
     back();
     delay(500);
     right();
     delay(500);
   }
-  else if (!digitalRead(IR2)){
+  else if (!digitalRead(IRFrontRight)){
+    //write code to interrupt this code if another border is detected in the process of going through this piece of code
+    back();
+    delay(500);
+    left();
+    delay(500);
+  }
+  else if (!digitalRead(IRFrontLeft)){
+    //write code to interrupt this code if another border is detected in the process of going through this piece of code
+    back();
+    delay(500);
+    right();
+    delay(500);
+  }
+  else if (!digitalRead(IRBackCenter)){
+    //write code to interrupt this code if another border is detected in the process of going through this piece of code
     forward();
     delay(500);
     left();
     delay(500);
   }
+  
   delay(1);
 }
