@@ -130,19 +130,18 @@ void loop() {
   Serial.print(distanceR);
   Serial.println(" cm");*/
 
-  if(digitalRead(IRFrontCenter) && digitalRead(IRBackCenter)
-    && digitalRead(IRFrontLeft) && digitalRead(IRFrontRight)) {
+  if(digitalRead(IRFrontCenter) && digitalRead(IRFrontLeft) && digitalRead(IRFrontRight)) {
     //The ring is 122cm so we should be detecting that far from the sensors to check for any object in the ring
     //modified the distance to 122 to check for that.
-    if(distanceM < 45){
+    if(distanceM < 50){
       forward();
       delay(100);
     }
-    else if(distanceR < 45){
+    else if(distanceR < 50){
       right();
       delay(100);
     }
-    else if(distanceL < 45){
+    else if(distanceL < 50){
       left();
       delay(100);
     }
@@ -172,13 +171,13 @@ void loop() {
     right();
     delay(500);
   }
-  else if (!digitalRead(IRBackCenter)){
+  /*else if (!digitalRead(IRBackCenter)){
     //write code to interrupt this code if another border is detected in the process of going through this piece of code
     forward();
     delay(500);
     left();
     delay(500);
-  }
+  }*/
   
   delay(1);
 }
