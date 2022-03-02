@@ -1,183 +1,263 @@
-#include <Arduino.h>
+// Autonomous Sumo Robot
+// EE Senior Design
+// Designed for Raspberry Pi Pico
 
-#define echoPin1 0 // attach pin D2 Arduino to pin Echo of HC-SR04
-#define trigPin1 1 //attach pin D3 Arduino to pin Trig of HC-SR04
-#define echoPin2 2
-#define trigPin2 3
-#define echoPin3 4
-#define trigPin3 5
-#define IRFrontCenter 6
-#define IRBackCenter 7
-#define IRFrontLeft 8
-#define IRFrontRight 9
-#define Motor1 16
-#define Motor2 17
-#define Motor3 18
-#define Motor4 19
-#define LED 25
+/************************************************************
+ * HallWay Traversal Code
+*************************************************************/
 
+#include <Arduino.h>                
+#include "pico/multicore.h"         
 
-long duration; // variable for the duration of sound wave travel
-int distanceM, distanceL, distanceR; // variable for the distance measurement
-int m1Speed = 250;
-int m2Speed = 255;
-int m1Slow = 100;
-int m2Slow = 100;
-bool FOUNDMID = false;
-bool FOUNDLEFT = false;
-bool FOUNDRIGHT = false;
+#define objLeft 0
+#define objMid 2
+#define objRight 1
+
+#define boundLeft 26
+#define boundRight 28
+
+#define lMotorFW 16
+#define lMotorBW 17
+#define rMotorFW 18
+#define rMotorBW 19
+
+#define speedControlL 20
+#define speedControlR 21
+
+// Determines max speed of motors
+int m1Speed = 200*0.8;
+int m2Speed = 200*0.8;
+int m1Slow = 200*0.5;
+int m2Slow = 200*0.5;
+
+// Keeps track of the last seen object
+// Default to 3 so the sumo-bot defaults to forward
+//int lastState = 3;
+
+// Movement functions. Will make these so you can pass
+// in different speeds at a later time. 
+void fwDrive() {
+  analogWrite(speedControlL, m1Speed);
+  analogWrite(speedControlR, m2Speed);
+  digitalWrite(lMotorFW,1);
+  digitalWrite(rMotorFW,1);
+  digitalWrite(lMotorBW,0);
+  digitalWrite(rMotorBW,0);
+}
+
+void bwDrive() {
+  analogWrite(speedControlL, m1Speed);
+  analogWrite(speedControlR, m2Speed);
+  digitalWrite(lMotorFW,0);
+  digitalWrite(rMotorFW,0);
+  digitalWrite(lMotorBW,1);
+  digitalWrite(rMotorBW,1);
+}
+
+void lTurn() {
+  analogWrite(speedControlL, 0);
+  analogWrite(speedControlR, m2Speed);
+  digitalWrite(lMotorFW,0);
+  digitalWrite(rMotorFW,1);
+  digitalWrite(lMotorBW,0);
+  digitalWrite(rMotorBW,0);
+}
+
+void rTurn() {
+  analogWrite(speedControlL, m1Speed);
+  analogWrite(speedControlR, 0);
+  digitalWrite(lMotorFW,1);
+  digitalWrite(rMotorFW,0);
+  digitalWrite(lMotorBW,0);
+  digitalWrite(rMotorBW,0);
+}
+
+void fwRDrive(){
+  analogWrite(speedControlL, m1Speed);
+  analogWrite(speedControlR, m1Slow);
+  digitalWrite(lMotorFW,1);
+  digitalWrite(rMotorFW,1);
+  digitalWrite(lMotorBW,0);
+  digitalWrite(rMotorBW,0);
+}
+
+void fwLDrive(){
+  analogWrite(speedControlL, m1Slow);
+  analogWrite(speedControlR, m1Speed);
+  digitalWrite(lMotorFW,1);
+  digitalWrite(rMotorFW,1);
+  digitalWrite(lMotorBW,0);
+  digitalWrite(rMotorBW,0);
+}
+
+/*******************************************************
+* Determines the direction the sumo-bot should turn
+*
+*  1 -> Left
+*  2 -> Forward Left
+*  3 -> Forward
+*  4 -> Forward Right
+*  5 -> Right
+*  Anything else -> 6
+*
+*  May add additional states in the future, but these
+*  5 are the most important right now.
+*******************************************************/
+/*int getDir() {
+  int dir;
+  bool l = !digitalRead(objLeft);
+  bool m = !digitalRead(objMid);
+  bool r = !digitalRead(objRight);
+  
+       if(l && !m && !r) dir = 1;
+  else if(l && m && !r)  dir = 2;
+  else if(!l && m && !r) dir = 3;
+  else if(!l && m && r)  dir = 4;
+  else if(!l && !m && r) dir = 5;
+  else dir = 6;
+
+  return dir;
+}
+
+void boundCheck() {
+  // Read in values from boundary sensors
+  int lBoundVal = analogRead(boundLeft);
+  int rBoundVal = analogRead(boundRight);
+
+  // Threshold for boundary detection sensors
+  int boundThresh = 200;
+
+  // Check if values are less than 200
+  // if not, search for enemy
+  if(lBoundVal < boundThresh) {
+    bwDrive();
+    delay(500);
+    rTurn();
+    delay(500);
+  }
+  else if(rBoundVal < boundThresh) {
+    bwDrive();
+    delay(500);
+    lTurn();
+    delay(500);
+  }
+  // Determines the direction the car
+  // should move based on what sensors are high
+  else {
+    int dir = getDir();
+    switch(dir) {
+      case 1:
+        while(digitalRead(objMid)) {
+          lBoundVal = analogRead(boundLeft);
+          rBoundVal = analogRead(boundRight);
+          lastState = 1;
+          if(lBoundVal < boundThresh || rBoundVal < boundThresh)
+            break;
+          lTurn();
+        }
+      break;
+      case 2:
+        lTurn();
+        lastState = 2;
+      break;
+      case 3:
+        fwDrive();
+        lastState = 3;
+      break;
+      case 4:
+        rTurn();
+        lastState = 4;
+      break;
+      case 5:
+        while(digitalRead(objMid)) {
+          lBoundVal = analogRead(boundLeft);
+          rBoundVal = analogRead(boundRight);
+          lastState = 5;
+          if(lBoundVal < boundThresh || rBoundVal < boundThresh)
+            break;
+          rTurn();
+        }
+      break;
+      // If sensors aren't seeing anything,
+      // turn in the direction the object was
+      // last seen.
+      default:
+        if(lastState == 1)
+          lTurn();
+        else if(lastState == 5)
+          rTurn();
+        else if(lastState == 3)
+          fwDrive();
+        else
+          fwDrive();
+      break;
+    }
+  }
+}
+*/
+
+// Initializes all of the pins
 void setup() {
-  pinMode(trigPin1, OUTPUT); // Sets the trigPin as an OUTPUT
-  pinMode(echoPin1, INPUT); // Sets the echoPin as an INPUT
-  pinMode(trigPin2, OUTPUT); // Sets the trigPin as an OUTPUT
-  pinMode(echoPin2, INPUT);
-  pinMode(trigPin3, OUTPUT); // Sets the trigPin as an OUTPUT
-  pinMode(echoPin3, INPUT);
-  pinMode(IRFrontCenter, INPUT);
-  pinMode(IRBackCenter, INPUT);
-  pinMode(IRFrontLeft, INPUT);
-  pinMode(IRFrontRight, INPUT);
-  pinMode(Motor1, OUTPUT);
-  pinMode(Motor2, OUTPUT);
-  pinMode(Motor3, OUTPUT);
-  pinMode(Motor4, OUTPUT);
-  pinMode(LED, OUTPUT);
+  pinMode(objLeft, INPUT);
+  pinMode(objMid, INPUT);
+  pinMode(objRight, INPUT);
+
+  pinMode(boundLeft, INPUT);
+  pinMode(boundRight, INPUT);
+
+  pinMode(lMotorBW, OUTPUT);
+  pinMode(lMotorFW, OUTPUT);
+  pinMode(rMotorBW, OUTPUT);
+  pinMode(rMotorFW, OUTPUT);
+  pinMode(speedControlL, OUTPUT);
+  pinMode(speedControlR, OUTPUT);
+  
   Serial.begin(115200);
-  
-}
-int pulseUltra(int echo, int trig) {
-  digitalWrite(trig, LOW);
-  delayMicroseconds(2);
-  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
-  digitalWrite(trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trig, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echo, HIGH);
-  // Calculating the distance in cm
-  int distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
-  
-  return distance;
 }
 
-//movement functions to move the car
-void forward(){
-  analogWrite(Motor1, m1Speed);
-  analogWrite(Motor2, 0);
-  analogWrite(Motor3, 0);
-  analogWrite(Motor4, m2Speed);
-}
 
-void back(){
-  analogWrite(Motor1, 0);
-  analogWrite(Motor2, m1Speed);
-  analogWrite(Motor3, m2Speed);
-  analogWrite(Motor4, 0);
-}
-
-void right(){
-  analogWrite(Motor1, m1Slow);
-  analogWrite(Motor2, 0);
-  analogWrite(Motor3, 0);
-  analogWrite(Motor4, 0);
-}
-
-void left(){
-  analogWrite(Motor1, 0);
-  analogWrite(Motor2, 0);
-  analogWrite(Motor3, 0);
-  analogWrite(Motor4, m2Slow);
-}
-
-void backright(){
-  analogWrite(Motor1, 0);
-  analogWrite(Motor2, m1Speed);
-  analogWrite(Motor3, m2Slow);
-  analogWrite(Motor4, 0);
-}
-
-void backleft(){
-  analogWrite(Motor1, 0);
-  analogWrite(Motor2, m1Slow);
-  analogWrite(Motor3, m2Speed);
-  analogWrite(Motor4, 0);
-}
-
-void stop(){
-  back();
-  delay(10);
-  analogWrite(Motor1, 0);
-  analogWrite(Motor2, 0);
-  analogWrite(Motor3, 0);
-  analogWrite(Motor4, 0);
-}
-
-//-------------------------------------------------------------------------------------------
-//Main Loop function with algorithm
-//-------------------------------------------------------------------------------------------
+//Loop function to run the hallway traversal
 void loop() {
-  distanceM = pulseUltra(echoPin1, trigPin1);
-  distanceL = pulseUltra(echoPin2, trigPin2);
-  distanceR = pulseUltra(echoPin3, trigPin3);
-  // Displays the distance on the Serial Monitor
-  /*Serial.print("DistanceL: ");
-  Serial.print(distanceL);
-  Serial.print(" cm");
-  Serial.print("\tDistanceM: ");
-  Serial.print(distanceM);
-  Serial.print(" cm");
-  Serial.print("\tDistanceR: ");
-  Serial.print(distanceR);
-  Serial.println(" cm");*/
+  // Read in values from boundary sensors
+  int lBoundVal = analogRead(boundLeft);
+  int rBoundVal = analogRead(boundRight);
 
-  if(digitalRead(IRFrontCenter) && digitalRead(IRFrontLeft) && digitalRead(IRFrontRight)) {
-    //The ring is 122cm so we should be detecting that far from the sensors to check for any object in the ring
-    //modified the distance to 122 to check for that.
-    if(distanceM < 50){
-      forward();
-      delay(100);
+  //reading values from object detection sensors
+  bool l = !digitalRead(objLeft);
+  bool m = !digitalRead(objMid);
+  bool r = !digitalRead(objRight);
+
+  // Threshold for boundary detection sensors
+  int boundThresh = 200;
+
+  if(lBoundVal > boundThresh && rBoundVal > boundThresh){
+    lTurn();
+    delay(300);
+  } else {
+    if(l == 0 && m == 0 && r == 0){
+      fwDrive();
     }
-    else if(distanceR < 50){
-      right();
-      delay(100);
+    else if(l == 0 && m == 0 && r == 1){
+      fwLDrive();
     }
-    else if(distanceL < 50){
-      left();
-      delay(100);
+    else if(l == 0 && m == 1 && r == 0){
+      lTurn();
     }
-    else{
-      right();
-      delay(100);
+    else if(l == 0 && m == 1 && r == 1){
+      lTurn();
+    }
+    else if(l == 1 && m == 0 && r == 0){
+      fwRDrive();
+    }
+    else if(l == 1 && m == 0 && r == 1){
+      fwDrive();
+    }
+    else if(l == 1 && m == 1 && r == 0){
+      rTurn();
+    }
+    else if(l == 1 && m == 1 && r == 1){
+      bwDrive();
     }
   }
-  else if (!digitalRead(IRFrontCenter)){
-    //write code to interrupt this code if another border is detected in the process of going through this piece of code
-    back();
-    delay(500);
-    right();
-    delay(500);
-  }
-  else if (!digitalRead(IRFrontRight)){
-    //write code to interrupt this code if another border is detected in the process of going through this piece of code
-    back();
-    delay(500);
-    left();
-    delay(500);
-  }
-  else if (!digitalRead(IRFrontLeft)){
-    //write code to interrupt this code if another border is detected in the process of going through this piece of code
-    back();
-    delay(500);
-    right();
-    delay(500);
-  }
-  /*else if (!digitalRead(IRBackCenter)){
-    //write code to interrupt this code if another border is detected in the process of going through this piece of code
-    forward();
-    delay(500);
-    left();
-    delay(500);
-  }*/
   
-  delay(1);
 }
